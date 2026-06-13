@@ -19,15 +19,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "^13.1.0",
-    "@stellar/freighter-api": "^3.1.0",
+    "@stellar/freighter-api": "^6.0.1",
+    "@stellar/stellar-sdk": "^16.0.1",
     "circomlibjs": "^0.1.7",
     "snarkjs": "^0.7.5"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
     "@types/node": "^22.15.21",
     "@types/snarkjs": "^0.7.8",
-    "tsup": "^8.5.0"
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
   }
 }
