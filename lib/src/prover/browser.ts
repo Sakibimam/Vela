@@ -164,6 +164,14 @@ export class VelaProver {
       input.nonce
     );
 
+    // Compute the leaf (commitment) from amount, receiver_secret, nonce
+    // This must match what the sender computed
+    const leaf = hasher.hashThree(
+      input.amount,
+      input.receiver_secret,
+      input.nonce
+    );
+
     const circuitInput = {
       amount: input.amount.toString(),
       receiver_secret: input.receiver_secret.toString(),
@@ -174,6 +182,10 @@ export class VelaProver {
       nullifier: nullifier.toString(),
       receiver_address_hash: input.receiver_address_hash.toString(),
     };
+
+    console.log("ZK WITHDRAWAL INPUTS:", circuitInput);
+    console.log("Computed leaf (should match commitment):", leaf.toString());
+    console.log("Expected merkle_root:", input.merkle_root.toString());
 
     return this.generateProof(circuitInput);
   }
