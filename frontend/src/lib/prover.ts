@@ -87,7 +87,7 @@ async function realKycProof(input: KycProofInput): Promise<ProofOutput> {
     merkle_path: Array(8).fill(BigInt(0)),
     merkle_indices: Array(8).fill(0),
     allowed_countries_root: allowedCountriesRoot,
-    min_birth_year: BigInt(2008),
+    min_birth_year: BigInt(2008), // Maximum birth year for 18+ as of 2026 (circuit constraint: birth_year <= min_birth_year)
     kyc_issuer_hash: undefined, // Will be computed inside proveKYC from kyc_attestation + user_secret
     nonce: BigInt("0x" + randomHex(16)),
   });
@@ -125,13 +125,17 @@ async function realWithdrawalProof(input: WithdrawalProofInput): Promise<ProofOu
     "/circuits/withdrawal.wasm",
     "/circuits/withdrawal.zkey"
   );
+
+  // Single-leaf Merkle tree: merkle_root = commitment (the leaf itself)
+  // merkleRoot is a decimal string from Poseidon output
+  // receiverSecret and nonce are hex strings
   const result = await prover.proveWithdrawal({
     amount: BigInt(input.amount),
     receiver_secret: BigInt("0x" + input.receiverSecret),
     nonce: BigInt("0x" + input.nonce),
-    merkle_path: Array(8).fill(BigInt(0)),
-    merkle_indices: Array(8).fill(0),
-    merkle_root: BigInt("0x" + input.merkleRoot),
+    merkle_path: Array(8).fill(BigInt(0)),  // All zeros for single-leaf tree
+    merkle_indices: Array(8).fill(0),        // All zeros for single-leaf tree
+    merkle_root: BigInt(input.merkleRoot),   // Parse commitment as decimal BigInt
     receiver_address_hash: BigInt(0),
   });
   const proofHash = randomHex(32);
