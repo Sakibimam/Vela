@@ -22,6 +22,7 @@ export interface TransactionState {
 }
 
 export const CORRIDORS = [
+  { value: "IN-PH", label: "India → Philippines", senderCountry: "IN" },
   { value: "AE-PH", label: "Dubai → Manila", senderCountry: "AE" },
   { value: "US-CO", label: "US → Colombia", senderCountry: "US" },
   { value: "GB-NG", label: "UK → Lagos", senderCountry: "GB" },
@@ -31,6 +32,7 @@ export const COUNTRIES: Record<string, string> = {
   AE: "United Arab Emirates",
   US: "United States",
   GB: "United Kingdom",
+  IN: "India",
   PH: "Philippines",
   CO: "Colombia",
   NG: "Nigeria",
