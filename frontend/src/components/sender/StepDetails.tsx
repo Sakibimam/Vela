@@ -17,6 +17,7 @@ interface StepDetailsProps {
   walletAddress: string | null;
   walletConnecting?: boolean;
   onConnectWallet: () => void;
+  onDisconnectWallet?: () => void;
 }
 
 export function StepDetails({
@@ -27,6 +28,7 @@ export function StepDetails({
   walletAddress,
   walletConnecting,
   onConnectWallet,
+  onDisconnectWallet,
 }: StepDetailsProps) {
   const [secretCopied, setSecretCopied] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -90,11 +92,23 @@ export function StepDetails({
         <Card variant="outlined" className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-success" />
-            <span className="text-sm text-text-primary font-medium">Wallet Connected</span>
+            <div>
+              <span className="text-sm text-text-primary font-medium">Wallet Connected</span>
+              <code className="block text-xs font-mono text-text-secondary mt-0.5">
+                {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-8)}
+              </code>
+            </div>
           </div>
-          <code className="text-xs font-mono text-text-secondary">
-            {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-8)}
-          </code>
+          {onDisconnectWallet && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onDisconnectWallet}
+              className="text-text-secondary hover:text-text-primary"
+            >
+              Disconnect
+            </Button>
+          )}
         </Card>
       )}
 
