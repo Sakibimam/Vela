@@ -1,0 +1,19 @@
+{
+  "name": "vela",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Private cross-border remittance corridor on Stellar using zero-knowledge proofs",
+  "scripts": {
+    "dev": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint",
+    "circuits:compile": "pnpm --filter circuits compile",
+    "circuits:setup": "pnpm --filter circuits setup",
+    "circuits:test": "pnpm --filter circuits test",
+    "lib:build": "pnpm --filter lib build"
+  },
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

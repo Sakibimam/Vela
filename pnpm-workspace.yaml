@@ -1,0 +1,9 @@
+packages:
+  - 'circuits'
+  - 'lib'
+  - 'frontend'
+allowBuilds:
+  blake-hash: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

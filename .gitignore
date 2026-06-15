@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.next/
+.turbo/
+target/
+circuits/build/
+
+# ZK artifacts
+*.wasm
+*.ptau
+proof.json
+witness.wtns
+*.zkey
+*.vkey.json
+*.r1cs
+*.sym
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+coverage/
