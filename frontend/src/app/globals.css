@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --color-space-900: #0B0F19;
+  --color-space-800: #111827;
+  --color-space-700: #1F2937;
+  --color-space-600: #374151;
+
+  --color-accent-blue: #3B82F6;
+  --color-accent-purple: #8B5CF6;
+
+  --color-success: #10B981;
+  --color-error: #F43F5E;
+  --color-warning: #F59E0B;
+  --color-info: #06B6D4;
+
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #94A3B8;
+  --color-text-tertiary: #64748B;
+
+  --color-border: rgb(255 255 255 / 0.08);
+  --color-border-strong: rgb(255 255 255 / 0.12);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-input: 6px;
+
+  --animate-fade-in: fade-in 0.5s ease-out;
+  --animate-fade-up: fade-up 0.6s ease-out;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-gradient: gradient-shift 8s ease infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@utility glass {
+  background: rgb(255 255 255 / 0.05);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+
+@utility glass-strong {
+  background: rgb(255 255 255 / 0.08);
+  backdrop-filter: blur(32px);
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+
+@utility gradient-text {
+  background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility gradient-border {
+  position: relative;
+}
+
+@utility gradient-bg {
+  background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple));
+}
+
+@layer base {
+  html {
+    background-color: var(--color-space-900);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background: rgb(59 130 246 / 0.3);
+    color: white;
+  }
+}
