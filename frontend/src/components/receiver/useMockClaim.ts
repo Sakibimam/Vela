@@ -41,48 +41,74 @@ export function useMockClaim() {
       return;
     }
 
-    if (!isMockMode()) {
-      try {
-        const { PoseidonHasher } = await import("@vela/lib");
-        const hasher = await PoseidonHasher.init();
-        const secretBigint = BigInt("0x" + secret);
-        const nonce = BigInt("0x" + secret.slice(32));
-        const commitment = hasher.computeCommitment(BigInt(50000), secretBigint, nonce);
-        const commitmentHash = commitment.toString(16).padStart(64, "0");
+    try {
+      // Look up transfer by secret directly (sender stored under secret key)
+      // In production, this would query the on-chain encrypted payload with view key
+      const transfers = typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('vela_transfers') || '{}')
+        : {};
 
+      const transfer = transfers[secret];
+
+      if (transfer) {
         setClaimData({
           secret,
-          amount: "500.00",
-          corridor: "AE-PH",
-          commitmentHash,
+          amount: transfer.amount,
+          corridor: transfer.corridor,
+          commitmentHash: transfer.commitment,
         });
         setLookup({ status: "found", error: null });
-      } catch (err) {
+      } else {
         setLookup({
           status: "not-found",
-          error: err instanceof Error ? err.message : "Lookup failed",
+          error: "No matching transfer found for this secret. Make sure you entered the correct secret from the sender."
         });
       }
-    } else {
-      const commitmentHash = randomHex(32);
-      setClaimData({
-        secret,
-        amount: "500.00",
-        corridor: "AE-PH",
-        commitmentHash,
+    } catch (err) {
+      setLookup({
+        status: "not-found",
+        error: err instanceof Error ? err.message : "Lookup failed",
       });
-      setLookup({ status: "found", error: null });
     }
   }, []);
 
   const generateProof = useCallback(async () => {
     setWithdrawalProof({ status: "generating", hash: null, error: null });
     try {
+      if (!claimData.secret || !claimData.commitmentHash || !claimData.amount) {
+        throw new Error("Secret, commitment, or amount not found");
+      }
+
+      // Derive nonce from secret (same as sender did)
+      const nonce = claimData.secret.slice(32);
+
+      // Get amount in cents (stored in transfers)
+      const transfers = typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('vela_transfers') || '{}')
+        : {};
+      const transfer = transfers[claimData.secret];
+      const amountCents = transfer?.amountCents || 0;
+
+      // Compute Merkle root for single-leaf tree
+      // For a tree with all-zero siblings, root = hash(hash(...hash(leaf, 0)..., 0)) (8 levels)
+      const { PoseidonHasher } = await import("@vela/lib");
+      const hasher = await PoseidonHasher.init();
+
+      // Leaf = commitment = Poseidon(amount, secret, nonce)
+      const leaf = BigInt(claimData.commitmentHash);
+
+      // Hash up through 8 levels with zero siblings
+      let currentHash = leaf;
+      for (let i = 0; i < 8; i++) {
+        currentHash = hasher.hashTwo(currentHash, BigInt(0));
+      }
+      const merkleRoot = currentHash.toString();
+
       const result = await generateWithdrawalProof({
-        amount: 50000,
+        amount: amountCents,
         receiverSecret: claimData.secret,
-        nonce: randomHex(16),
-        merkleRoot: claimData.commitmentHash || randomHex(32),
+        nonce: nonce,
+        merkleRoot: merkleRoot, // Computed Merkle root for single-leaf tree
       });
       setWithdrawalProof({ status: "complete", hash: result.proofHash, error: null });
       setProofData(result);
@@ -93,7 +119,7 @@ export function useMockClaim() {
         error: err instanceof Error ? err.message : "Proof generation failed",
       });
     }
-  }, [claimData.secret, claimData.commitmentHash]);
+  }, [claimData.secret, claimData.commitmentHash, claimData.amount]);
 
   const submitClaim = useCallback(async () => {
     if (!proofData) {
