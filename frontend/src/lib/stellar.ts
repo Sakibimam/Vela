@@ -39,10 +39,14 @@ function explorerUrl(hash: string): string {
   return `https://stellar.expert/explorer/testnet/tx/${hash}`;
 }
 
-function fieldElementToBytes32(decimalString: string): Buffer {
+function fieldElementToBytes32(decimalString: string): Uint8Array {
   const n = BigInt(decimalString);
   const hex = n.toString(16).padStart(64, "0");
-  return Buffer.from(hex, "hex");
+  const bytes = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) {
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
 }
 
 async function mockTransaction(delayMs: number): Promise<TransactionResult> {
@@ -59,8 +63,6 @@ async function realDeposit(params: DepositParams, walletAddress: string): Promis
   const server = new rpc.Server(ENV.sorobanRpcUrl);
   const networkPassphrase = ENV.networkPassphrase;
   const policyContractId = ENV.policyContractId;
-
-  const sourceAccount = await server.getAccount(walletAddress);
   const contract = new StellarSdk.Contract(policyContractId);
 
   // Encode the ZK proofs to BLS12-381 format
@@ -116,55 +118,80 @@ async function realDeposit(params: DepositParams, walletAddress: string): Promis
 
   // Commitment is the first public signal of the amount proof (convert from decimal string to bytes)
   const commitment = StellarSdk.xdr.ScVal.scvBytes(
-    fieldElementToBytes32(params.commitment)
+    Buffer.from(fieldElementToBytes32(params.commitment))
   );
 
   // Nullifiers are the last public signal from each proof (convert from decimal string to bytes)
   const nullifierKycBytes = fieldElementToBytes32(params.kycPublicSignals[params.kycPublicSignals.length - 1] || "0");
   const nullifierAmountBytes = fieldElementToBytes32(params.amountPublicSignals[params.amountPublicSignals.length - 1] || "0");
 
-  console.log("🔍 Nullifier KYC hex:", nullifierKycBytes.toString("hex"));
-  console.log("🔍 Nullifier Amount hex:", nullifierAmountBytes.toString("hex"));
-  console.log("🔍 Commitment hex:", fieldElementToBytes32(params.commitment).toString("hex"));
-
-  const nullifierKyc = StellarSdk.xdr.ScVal.scvBytes(nullifierKycBytes);
-  const nullifierAmount = StellarSdk.xdr.ScVal.scvBytes(nullifierAmountBytes);
+  const nullifierKyc = StellarSdk.xdr.ScVal.scvBytes(Buffer.from(nullifierKycBytes));
+  const nullifierAmount = StellarSdk.xdr.ScVal.scvBytes(Buffer.from(nullifierAmountBytes));
 
   const encPayload = StellarSdk.xdr.ScVal.scvBytes(
     Buffer.from(params.encryptedPayload.padStart(64, "0").slice(0, 64), "hex")
   );
 
-  const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
-    fee: "10000000",
-    networkPassphrase,
-  })
-    .addOperation(
-      contract.call(
-        "deposit",
-        StellarSdk.nativeToScVal(walletAddress, { type: "address" }),
-        kycProofVal,
-        kycPublicInputsVal,
-        amountProofVal,
-        amountPublicInputsVal,
-        commitment,
-        nullifierKyc,
-        nullifierAmount,
-        encPayload
+  // Transaction builder function that accepts a fresh account
+  const buildTx = (sourceAccount: any) => {
+    return new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: "10000000",
+      networkPassphrase,
+    })
+      .addOperation(
+        contract.call(
+          "deposit",
+          StellarSdk.nativeToScVal(walletAddress, { type: "address" }),
+          kycProofVal,
+          kycPublicInputsVal,
+          amountProofVal,
+          amountPublicInputsVal,
+          commitment,
+          nullifierKyc,
+          nullifierAmount,
+          encPayload
+        )
       )
-    )
-    .setTimeout(30)
-    .build();
+      .setTimeout(300)
+      .build();
+  };
 
-  const preparedTx = await server.prepareTransaction(tx);
+  // Submit with retry on txBadSeq
+  const MAX_RETRIES = 3;
+  let sendResponse;
 
-  const { signTx } = await import("@vela/lib");
-  const signedXdr = await signTx(preparedTx.toXDR(), networkPassphrase);
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    // Always fetch fresh account sequence
+    const sourceAccount = await server.getAccount(walletAddress);
+    const tx = buildTx(sourceAccount);
+    const preparedTx = await server.prepareTransaction(tx);
 
-  const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
-  const sendResponse = await server.sendTransaction(signedTx);
+    const { signTx } = await import("@vela/lib");
+    const signedXdr = await signTx(preparedTx.toXDR(), networkPassphrase);
+    const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
 
-  if (sendResponse.status === "ERROR") {
-    throw new Error(`Transaction send failed: ${JSON.stringify(sendResponse.errorResult)}`);
+    sendResponse = await server.sendTransaction(signedTx);
+
+    if (sendResponse.status === "ERROR") {
+      // Check if this is a txBadSeq error by inspecting the error result
+      const errorStr = JSON.stringify(sendResponse.errorResult);
+      const isBadSeq = errorStr.includes("txBadSeq") || errorStr.includes("tx_bad_seq");
+
+      if (isBadSeq && attempt < MAX_RETRIES - 1) {
+        // Stale sequence — wait and retry with fresh account
+        await delay(1000);
+        continue;
+      }
+
+      throw new Error(`Transaction send failed: ${errorStr}`);
+    }
+
+    // Success - break out of retry loop
+    break;
+  }
+
+  if (!sendResponse || sendResponse.status === "ERROR") {
+    throw new Error("Transaction failed after 3 retries");
   }
 
   const result = await server.pollTransaction(sendResponse.hash, {
@@ -172,6 +199,13 @@ async function realDeposit(params: DepositParams, walletAddress: string): Promis
   });
 
   if (result.status !== "SUCCESS") {
+    // Check if this is a nullifier reuse error (Contract error #8)
+    const resultStr = JSON.stringify(result);
+    if (resultStr.includes("Error(Contract, #8)") || resultStr.includes("NullifierAlreadyUsed")) {
+      throw new Error(
+        "Nullifier already used. This proof has been consumed. Please generate fresh proofs and try again."
+      );
+    }
     throw new Error(`Transaction failed on-chain: ${result.status}`);
   }
 
@@ -190,8 +224,6 @@ async function realWithdraw(params: WithdrawParams, walletAddress: string): Prom
   const server = new rpc.Server(ENV.sorobanRpcUrl);
   const networkPassphrase = ENV.networkPassphrase;
   const policyContractId = ENV.policyContractId;
-
-  const sourceAccount = await server.getAccount(walletAddress);
   const contract = new StellarSdk.Contract(policyContractId);
 
   // Encode the withdrawal proof to BLS12-381 format
@@ -220,42 +252,73 @@ async function realWithdraw(params: WithdrawParams, walletAddress: string): Prom
     )
   );
 
+  // Convert hex string nullifier to BigInt with "0x" prefix, then to bytes
   const nullifier = StellarSdk.xdr.ScVal.scvBytes(
-    Buffer.from(params.nullifier.padStart(64, "0").slice(0, 64), "hex")
+    Buffer.from(fieldElementToBytes32(BigInt("0x" + params.nullifier).toString()))
   );
 
   // Withdrawal binding is derived from public signals (last element is typically the binding)
   const withdrawalBinding = StellarSdk.xdr.ScVal.scvBytes(
-    Buffer.from(params.withdrawalPublicSignals[params.withdrawalPublicSignals.length - 1] || randomHex(32)).slice(0, 32)
+    Buffer.from(fieldElementToBytes32(params.withdrawalPublicSignals[params.withdrawalPublicSignals.length - 1] || "0"))
   );
 
-  const tx = new StellarSdk.TransactionBuilder(sourceAccount, {
-    fee: "10000000",
-    networkPassphrase,
-  })
-    .addOperation(
-      contract.call(
-        "withdraw",
-        StellarSdk.nativeToScVal(walletAddress, { type: "address" }),
-        proofVal,
-        publicInputsVal,
-        nullifier,
-        withdrawalBinding
+  // Transaction builder function that accepts a fresh account
+  const buildTx = (sourceAccount: any) => {
+    return new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: "10000000",
+      networkPassphrase,
+    })
+      .addOperation(
+        contract.call(
+          "withdraw",
+          StellarSdk.nativeToScVal(walletAddress, { type: "address" }),
+          proofVal,
+          publicInputsVal,
+          nullifier,
+          withdrawalBinding
+        )
       )
-    )
-    .setTimeout(30)
-    .build();
+      .setTimeout(300)
+      .build();
+  };
 
-  const preparedTx = await server.prepareTransaction(tx);
+  // Submit with retry on txBadSeq and txTooLate
+  const MAX_RETRIES = 3;
+  let sendResponse;
 
-  const { signTx } = await import("@vela/lib");
-  const signedXdr = await signTx(preparedTx.toXDR(), networkPassphrase);
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    // Always fetch fresh account sequence
+    const sourceAccount = await server.getAccount(walletAddress);
+    const tx = buildTx(sourceAccount);
+    const preparedTx = await server.prepareTransaction(tx);
 
-  const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
-  const sendResponse = await server.sendTransaction(signedTx);
+    const { signTx } = await import("@vela/lib");
+    const signedXdr = await signTx(preparedTx.toXDR(), networkPassphrase);
+    const signedTx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, networkPassphrase);
 
-  if (sendResponse.status === "ERROR") {
-    throw new Error(`Transaction send failed: ${JSON.stringify(sendResponse.errorResult)}`);
+    sendResponse = await server.sendTransaction(signedTx);
+
+    if (sendResponse.status === "ERROR") {
+      // Check if this is a txBadSeq or txTooLate error by inspecting the error result
+      const errorStr = JSON.stringify(sendResponse.errorResult);
+      const isBadSeq = errorStr.includes("txBadSeq") || errorStr.includes("tx_bad_seq");
+      const isTooLate = errorStr.includes("txTooLate") || errorStr.includes("tx_too_late");
+
+      if ((isBadSeq || isTooLate) && attempt < MAX_RETRIES - 1) {
+        // Stale sequence or expired timeBounds — wait and retry with fresh account and new timeBounds
+        await delay(1000);
+        continue;
+      }
+
+      throw new Error(`Transaction send failed: ${errorStr}`);
+    }
+
+    // Success - break out of retry loop
+    break;
+  }
+
+  if (!sendResponse || sendResponse.status === "ERROR") {
+    throw new Error("Transaction failed after 3 retries");
   }
 
   const result = await server.pollTransaction(sendResponse.hash, {
@@ -263,6 +326,13 @@ async function realWithdraw(params: WithdrawParams, walletAddress: string): Prom
   });
 
   if (result.status !== "SUCCESS") {
+    // Check if this is a nullifier reuse error (Contract error #8)
+    const resultStr = JSON.stringify(result);
+    if (resultStr.includes("Error(Contract, #8)") || resultStr.includes("NullifierAlreadyUsed")) {
+      throw new Error(
+        "NULLIFIER_ALREADY_USED: These proofs were already used. Please go back to Step 2 and generate new proofs."
+      );
+    }
     throw new Error(`Transaction failed on-chain: ${result.status}`);
   }
 
@@ -284,9 +354,6 @@ export function getWalletAddress(): string | null {
 }
 
 export async function submitDeposit(params: DepositParams): Promise<TransactionResult> {
-  if (isMockMode()) {
-    return mockTransaction(3000 + Math.random() * 1500);
-  }
   const walletAddress = _cachedWalletAddress;
   if (!walletAddress) {
     throw new Error("Wallet not connected. Connect your wallet first.");
@@ -295,9 +362,6 @@ export async function submitDeposit(params: DepositParams): Promise<TransactionR
 }
 
 export async function submitWithdrawal(params: WithdrawParams): Promise<TransactionResult> {
-  if (isMockMode()) {
-    return mockTransaction(3000 + Math.random() * 1500);
-  }
   const walletAddress = _cachedWalletAddress;
   if (!walletAddress) {
     throw new Error("Wallet not connected. Connect your wallet first.");
