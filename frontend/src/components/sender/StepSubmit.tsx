@@ -9,6 +9,7 @@ interface StepSubmitProps {
   transaction: TransactionState;
   onSubmit: () => void;
   onComplete: () => void;
+  onBackToProofs: () => void;
 }
 
 type TxStep = "building" | "signing" | "submitting" | "complete";
@@ -24,7 +25,16 @@ function getStepState(current: TransactionState["status"], target: TxStep) {
   return "pending" as const;
 }
 
-export function StepSubmit({ transaction, onSubmit, onComplete }: StepSubmitProps) {
+function isNullifierError(error: string | null): boolean {
+  if (!error) return false;
+  return (
+    error.includes("NULLIFIER_ALREADY_USED") ||
+    error.includes("Error(Contract, #8)") ||
+    error.includes("NullifierAlreadyUsed")
+  );
+}
+
+export function StepSubmit({ transaction, onSubmit, onComplete, onBackToProofs }: StepSubmitProps) {
   useEffect(() => {
     if (transaction.status === "idle") {
       onSubmit();
@@ -37,6 +47,14 @@ export function StepSubmit({ transaction, onSubmit, onComplete }: StepSubmitProp
       return () => clearTimeout(timer);
     }
   }, [transaction.status, onComplete]);
+
+  // Auto-navigate back to proofs on nullifier error after 3 seconds
+  useEffect(() => {
+    if (transaction.status === "error" && isNullifierError(transaction.error)) {
+      const timer = setTimeout(onBackToProofs, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [transaction.status, transaction.error, onBackToProofs]);
 
   return (
     <div className="space-y-6">
@@ -75,13 +93,28 @@ export function StepSubmit({ transaction, onSubmit, onComplete }: StepSubmitProp
 
       {transaction.status === "error" && (
         <Card variant="outlined" className="border-error/30">
-          <p className="text-sm text-error">{transaction.error || "Transaction failed"}</p>
-          <button
-            onClick={onSubmit}
-            className="text-sm text-accent-blue hover:underline mt-2 cursor-pointer"
-          >
-            Retry submission
-          </button>
+          <p className="text-sm text-error">
+            {isNullifierError(transaction.error)
+              ? "These proofs were already used in a previous transaction."
+              : transaction.error || "Transaction failed"}
+          </p>
+          {isNullifierError(transaction.error) ? (
+            <div className="mt-2 space-y-2">
+              <p className="text-xs text-text-secondary">
+                Redirecting to Step 2 to generate fresh proofs...
+              </p>
+              <button
+                onClick={onBackToProofs}
+                className="text-sm text-accent-blue hover:underline cursor-pointer"
+              >
+                Go back now
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-text-secondary mt-2">
+              Transaction failed. Go back to Step 2 to generate fresh proofs and try again.
+            </p>
+          )}
         </Card>
       )}
     </div>
