@@ -43,9 +43,12 @@ export function StepConfirmation({ formData, txHash, onSendAnother }: StepConfir
         >
           <Check className="w-8 h-8 text-success" />
         </motion.div>
-        <h3 className="text-xl font-bold text-text-primary mt-4">Payment Sent</h3>
+        <h3 className="text-xl font-bold text-text-primary mt-4">ZK Proof Verified</h3>
         <p className="text-sm text-text-secondary mt-1">
-          ${formData.amount} USDC sent via {corridor?.label}
+          ${formData.amount} shielded transfer via {corridor?.label}
+        </p>
+        <p className="text-xs text-text-tertiary mt-1">
+          ZK commitment stored on Stellar testnet. Token settlement requires contract initialization.
         </p>
       </div>
 
@@ -57,7 +60,7 @@ export function StepConfirmation({ formData, txHash, onSendAnother }: StepConfir
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-text-secondary">Amount</span>
-          <span className="text-sm font-medium text-text-primary">${formData.amount} USDC</span>
+          <span className="text-sm font-medium text-text-primary">${formData.amount}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-sm text-text-secondary">Corridor</span>
