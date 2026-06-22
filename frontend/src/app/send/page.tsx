@@ -33,9 +33,9 @@ export default function SendPage() {
   const [formData, setFormData] = useState<SendFormData>({
     amount: "",
     recipientAddress: "",
-    corridor: "AE-PH",
+    corridor: "IN-PH",
     sharedSecret: "",
-    country: "AE",
+    country: "IN",
     birthYear: "",
   });
 
@@ -55,9 +55,9 @@ export default function SendPage() {
     setFormData({
       amount: "",
       recipientAddress: "",
-      corridor: "AE-PH",
+      corridor: "IN-PH",
       sharedSecret: generateSecret(),
-      country: "AE",
+      country: "IN",
       birthYear: "",
     });
     reset();
@@ -123,6 +123,7 @@ export default function SendPage() {
               walletAddress={wallet.address}
               walletConnecting={wallet.connecting}
               onConnectWallet={wallet.connect}
+              onDisconnectWallet={wallet.disconnect}
             />
           )}
 
@@ -131,7 +132,7 @@ export default function SendPage() {
               formData={formData}
               kycProof={kycProof}
               amountProof={amountProof}
-              onGenerateProofs={generateProofs}
+              onGenerateProofs={() => generateProofs(formData)}
               onContinue={() => setStep(3)}
             />
           )}
@@ -139,8 +140,12 @@ export default function SendPage() {
           {step === 3 && (
             <StepSubmit
               transaction={transaction}
-              onSubmit={submitTransaction}
+              onSubmit={() => submitTransaction(formData)}
               onComplete={() => setStep(4)}
+              onBackToProofs={() => {
+                setStep(2);
+                reset();
+              }}
             />
           )}
 
