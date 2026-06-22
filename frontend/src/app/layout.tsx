@@ -3,6 +3,7 @@ import { IBM_Plex_Sans, JetBrains_Mono, Syne } from "next/font/google";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ToastProvider } from "@/components/ui/Toast";
+import { WalletProvider } from "@/context/WalletContext";
 import "./globals.css";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -40,11 +41,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${ibmPlexSans.variable} ${syne.variable} ${jetBrainsMono.variable}`}>
       <body className="min-h-dvh flex flex-col bg-space-900">
-        <ToastProvider>
-          <Header />
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </ToastProvider>
+        <WalletProvider>
+          <ToastProvider>
+            <Header />
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </ToastProvider>
+        </WalletProvider>
       </body>
     </html>
   );
