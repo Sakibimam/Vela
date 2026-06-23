@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Menu, X, Wallet } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Menu, X, Wallet, LogOut } from "lucide-react";
 import { cn, truncateAddress } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +19,22 @@ const NAV_ITEMS = [
 export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [walletMenuOpen, setWalletMenuOpen] = useState(false);
+  const walletMenuRef = useRef<HTMLDivElement>(null);
   const wallet = useWallet();
+
+  // Close wallet menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (walletMenuRef.current && !walletMenuRef.current.contains(event.target as Node)) {
+        setWalletMenuOpen(false);
+      }
+    }
+    if (walletMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [walletMenuOpen]);
 
   return (
     <header className="sticky top-0 z-40 w-full glass border-b border-border">
@@ -56,11 +71,31 @@ export function Header() {
             <Badge variant="info">Testnet</Badge>
 
             {wallet.connected && wallet.address ? (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-button)] bg-white/5 border border-border">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <span className="text-xs font-mono text-text-secondary">
-                  {truncateAddress(wallet.address, 4)}
-                </span>
+              <div className="hidden sm:block relative" ref={walletMenuRef}>
+                <button
+                  onClick={() => setWalletMenuOpen(!walletMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-button)] bg-white/5 border border-border hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <div className="w-2 h-2 rounded-full bg-success" />
+                  <span className="text-xs font-mono text-text-secondary">
+                    {truncateAddress(wallet.address, 4)}
+                  </span>
+                </button>
+
+                {walletMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 glass border border-border rounded-lg shadow-xl overflow-hidden">
+                    <button
+                      onClick={() => {
+                        wallet.disconnect();
+                        setWalletMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Disconnect
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Button
