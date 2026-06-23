@@ -44,6 +44,15 @@ export class PoseidonHasher {
   }
 
   /**
+   * Hash exactly one field element.
+   * @param a - The input.
+   * @returns Poseidon(a) as a bigint.
+   */
+  hashOne(a: bigint): bigint {
+    return this.hash([a]);
+  }
+
+  /**
    * Hash exactly two field elements.
    * @param a - First input.
    * @param b - Second input.

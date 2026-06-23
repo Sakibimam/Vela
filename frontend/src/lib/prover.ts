@@ -56,21 +56,39 @@ async function mockProof(delayMs: number): Promise<ProofOutput> {
 }
 
 async function realKycProof(input: KycProofInput): Promise<ProofOutput> {
-  const { VelaProver } = await import("@vela/lib");
+  const { VelaProver, PoseidonHasher } = await import("@vela/lib");
+
+  // Initialize Poseidon hasher to compute valid Merkle root
+  const hasher = await PoseidonHasher.init();
+
+  // Compute the Merkle root from country_code with path of all zeros
+  // This ensures the circuit's Merkle proof verification passes
+  const countryCode = BigInt(input.countryCode);
+  const countryLeaf = hasher.hashOne(countryCode);
+
+  // Compute Merkle root: hash up through 8 levels with path of zeros
+  let currentHash = countryLeaf;
+  for (let i = 0; i < 8; i++) {
+    // pathIndices[i] = 0 means current is left, path element is right
+    currentHash = hasher.hashTwo(currentHash, BigInt(0));
+  }
+  const allowedCountriesRoot = currentHash;
+
   const prover = await VelaProver.loadCircuit(
     "/circuits/kyc_compliance.wasm",
     "/circuits/kyc_compliance.zkey"
   );
+
   const result = await prover.proveKYC({
-    country_code: BigInt(input.countryCode),
+    country_code: countryCode,
     birth_year: BigInt(input.birthYear),
     kyc_attestation: BigInt("0x" + input.userSecret.slice(0, 16)),
     user_secret: BigInt("0x" + input.userSecret),
     merkle_path: Array(8).fill(BigInt(0)),
     merkle_indices: Array(8).fill(0),
-    allowed_countries_root: BigInt(0),
+    allowed_countries_root: allowedCountriesRoot,
     min_birth_year: BigInt(1944),
-    kyc_issuer_hash: BigInt(0),
+    kyc_issuer_hash: BigInt(0), // Will be computed inside proveKYC
     nonce: BigInt("0x" + randomHex(16)),
   });
   const proofHash = randomHex(32);
