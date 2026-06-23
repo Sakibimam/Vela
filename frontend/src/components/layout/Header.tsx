@@ -7,6 +7,7 @@ import { Menu, X, Wallet } from "lucide-react";
 import { cn, truncateAddress } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useWallet } from "@/hooks/useWallet";
 
 const NAV_ITEMS = [
   { href: "/send", label: "Send" },
@@ -18,12 +19,7 @@ const NAV_ITEMS = [
 export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-
-  async function handleConnect() {
-    // Placeholder — actual Freighter integration uses @vela/lib
-    setWalletAddress("GBXYZ...DEMO1234567890ABCDEF");
-  }
+  const wallet = useWallet();
 
   return (
     <header className="sticky top-0 z-40 w-full glass border-b border-border">
@@ -59,22 +55,24 @@ export function Header() {
           <div className="flex items-center gap-3">
             <Badge variant="info">Testnet</Badge>
 
-            {walletAddress ? (
+            {wallet.connected && wallet.address ? (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-button)] bg-white/5 border border-border">
                 <div className="w-2 h-2 rounded-full bg-success" />
                 <span className="text-xs font-mono text-text-secondary">
-                  {truncateAddress(walletAddress, 4)}
+                  {truncateAddress(wallet.address, 4)}
                 </span>
               </div>
             ) : (
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={handleConnect}
+                onClick={wallet.connect}
+                disabled={wallet.connecting}
+                loading={wallet.connecting}
                 className="hidden sm:inline-flex"
               >
                 <Wallet className="w-3.5 h-3.5" />
-                Connect
+                {wallet.connecting ? "Connecting..." : "Connect"}
               </Button>
             )}
 

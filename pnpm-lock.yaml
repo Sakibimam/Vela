@@ -40,6 +40,12 @@ importers:
       '@radix-ui/react-toast':
         specifier: ^1.2.7
         version: 1.2.16(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@stellar/freighter-api':
+        specifier: ^3.1.0
+        version: 3.1.0
+      '@stellar/stellar-sdk':
+        specifier: ^13.3.0
+        version: 13.3.0(supports-color@8.1.1)
       '@tailwindcss/postcss':
         specifier: ^4.1.8
         version: 4.3.1
@@ -80,6 +86,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.5
         version: 19.2.3(@types/react@19.2.17)
+      '@types/snarkjs':
+        specifier: ^0.7.9
+        version: 0.7.9
       eslint:
         specifier: ^9.28.0
         version: 9.39.4(jiti@2.7.0)(supports-color@8.1.1)
@@ -1111,6 +1120,7 @@ packages:
   '@stellar/stellar-base@13.1.0':
     resolution: {integrity: sha512-90EArG+eCCEzDGj3OJNoCtwpWDwxjv+rs/RNPhvg4bulpjN/CSRj+Ys/SalRcfM4/WRC5/qAfjzmJBAuquWhkA==}
     engines: {node: '>=18.0.0'}
+    deprecated: This package is now rolled into @stellar/stellar-sdk. Please use @stellar/stellar-sdk to continue receiving updates and support.
 
   '@stellar/stellar-sdk@13.3.0':
     resolution: {integrity: sha512-8+GHcZLp+mdin8gSjcgfb/Lb6sSMYRX6Nf/0LcSJxvjLQR0XHpjGzOiRbYb2jSXo51EnA6kAV5j+4Pzh5OUKUg==}

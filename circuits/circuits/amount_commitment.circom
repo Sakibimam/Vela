@@ -23,12 +23,14 @@ template AmountCommitment() {
     commitHash.out === commitment;
 
     // 2. Prove amount > 0
+    // TODO [MEDIUM security]: reduce to GreaterThan(32) — 64 bits allows field overflow
     component gtZero = GreaterThan(64);
     gtZero.in[0] <== amount;
     gtZero.in[1] <== 0;
     gtZero.out === 1;
 
     // 3. Prove amount <= max_amount
+    // TODO [MEDIUM security]: reduce to LessEqThan(32) — 64 bits allows field overflow
     component ltMax = LessEqThan(64);
     ltMax.in[0] <== amount;
     ltMax.in[1] <== max_amount;

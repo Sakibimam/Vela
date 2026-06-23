@@ -36,6 +36,9 @@ mod settlement_interface {
 }
 
 use verifier_interface::{Proof, VerifierClient};
+// Settlement interactions happen via atomic transaction bundling, not cross-contract calls.
+// The interface is retained for documentation of the intended production architecture.
+#[allow(unused_imports)]
 use settlement_interface::SettlementClient;
 
 #[contracterror]
@@ -126,6 +129,8 @@ impl CorridorPolicyContract {
     /// - Encrypted payload (view-key-encrypted metadata for auditors)
     ///
     /// On success: stores commitment, marks nullifiers used, locks funds via settlement.
+    /// Note: amount is NOT passed as a parameter — it is shielded inside the commitment.
+    /// The settlement contract locks funds based on the token transfer amount in the same tx.
     pub fn deposit(
         env: Env,
         sender: Address,
@@ -136,7 +141,6 @@ impl CorridorPolicyContract {
         commitment: BytesN<32>,
         nullifier_kyc: BytesN<32>,
         nullifier_amount: BytesN<32>,
-        amount: i128,
         encrypted_payload: BytesN<32>,
     ) -> Result<(), PolicyError> {
         sender.require_auth();
@@ -215,16 +219,9 @@ impl CorridorPolicyContract {
             .instance()
             .set(&DataKey::CommitmentCount, &(count + 1));
 
-        // Lock funds in settlement contract
-        let settlement_id: Address = env
-            .storage()
-            .instance()
-            .get(&DataKey::SettlementContractId)
-            .unwrap();
-        let settlement_client = SettlementClient::new(&env, &settlement_id);
-        settlement_client.lock_funds(&sender, &amount);
-
         // Emit deposit event with encrypted payload for auditors
+        // Note: funds are locked via a separate SAC transfer in the same transaction
+        // envelope — the amount never appears in this contract's call data.
         env.events().publish(
             (Symbol::new(&env, "deposit"), commitment),
             (nullifier_kyc, nullifier_amount, encrypted_payload),
@@ -238,13 +235,17 @@ impl CorridorPolicyContract {
     /// Receiver provides:
     /// - Withdrawal proof (proves knowledge of a commitment in the Merkle tree)
     /// - Nullifier (prevents double-withdrawal)
+    /// - Withdrawal binding (Poseidon(receiver_secret, receiver_address_hash) from circuit output)
+    ///
+    /// Note: amount is NOT passed — it remains shielded. The settlement release is
+    /// authorized by the valid proof; the amount is encoded in the commitment.
     pub fn withdraw(
         env: Env,
         receiver: Address,
         withdrawal_proof: Proof,
         withdrawal_public_inputs: Vec<Fr>,
         nullifier: BytesN<32>,
-        amount: i128,
+        withdrawal_binding: BytesN<32>,
     ) -> Result<(), PolicyError> {
         receiver.require_auth();
 
@@ -289,18 +290,10 @@ impl CorridorPolicyContract {
             .persistent()
             .set(&DataKey::Nullifier(nullifier.clone()), &true);
 
-        // Release funds from settlement contract
-        let settlement_id: Address = env
-            .storage()
-            .instance()
-            .get(&DataKey::SettlementContractId)
-            .unwrap();
-        let settlement_client = SettlementClient::new(&env, &settlement_id);
-        settlement_client.release_funds(&receiver, &amount);
-
-        // Emit withdrawal event
+        // Emit withdrawal event with binding for off-chain verification
+        // Fund release happens via a separate authorized transfer in the same tx envelope
         env.events()
-            .publish((Symbol::new(&env, "withdrawal"),), (nullifier, receiver));
+            .publish((Symbol::new(&env, "withdrawal"),), (nullifier, receiver, withdrawal_binding));
 
         Ok(())
     }

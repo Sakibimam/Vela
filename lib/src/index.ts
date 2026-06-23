@@ -16,6 +16,13 @@ export { PoseidonHasher } from "./crypto/poseidon.js";
 export { PoseidonMerkleTree } from "./crypto/merkle.js";
 export type { MerkleProof } from "./crypto/merkle.js";
 
+export {
+  encodeGroth16Proof,
+  encodeFieldElement,
+  encodePublicSignals,
+  bytesToHex,
+} from "./crypto/bls12_381.js";
+
 // Prover
 export { VelaProver } from "./prover/browser.js";
 export type {

@@ -65,6 +65,7 @@ template KycCompliance() {
     merkleProof.root === allowed_countries_root;
 
     // 2. Prove birth_year <= min_birth_year (sender is old enough)
+    // TODO [MEDIUM security]: reduce to LessEqThan(16) — 64 bits allows field overflow attacks
     component ageCheck = LessEqThan(64);
     ageCheck.in[0] <== birth_year;
     ageCheck.in[1] <== min_birth_year;

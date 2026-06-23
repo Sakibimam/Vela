@@ -46,7 +46,7 @@ export class ViewKeyManager {
    */
   static async generateMasterKey(): Promise<CryptoKey> {
     const raw = crypto.getRandomValues(new Uint8Array(32));
-    return crypto.subtle.importKey("raw", raw, "HKDF", false, [
+    return crypto.subtle.importKey("raw", raw, "HKDF", true, [
       "deriveKey",
       "deriveBits",
     ]);
@@ -133,16 +133,7 @@ export class ViewKeyManager {
    */
   static async exportKey(masterKey: CryptoKey): Promise<string> {
     const raw = new Uint8Array(
-      await crypto.subtle.deriveBits(
-        {
-          name: "HKDF",
-          hash: "SHA-256",
-          salt: TEXT_ENCODER.encode("vela-export"),
-          info: TEXT_ENCODER.encode("vela-master-export"),
-        },
-        masterKey,
-        256
-      )
+      await crypto.subtle.exportKey("raw", masterKey)
     );
     return bytesToHex(raw);
   }
@@ -153,8 +144,11 @@ export class ViewKeyManager {
    * @returns A CryptoKey ready for derivation.
    */
   static async importKey(hexKey: string): Promise<CryptoKey> {
+    if (hexKey.length !== 64) {
+      throw new Error("View key must be exactly 64 hex characters (32 bytes)");
+    }
     const raw = hexToBytes(hexKey);
-    return crypto.subtle.importKey("raw", raw.buffer as ArrayBuffer, "HKDF", false, [
+    return crypto.subtle.importKey("raw", raw.buffer as ArrayBuffer, "HKDF", true, [
       "deriveKey",
       "deriveBits",
     ]);
@@ -217,6 +211,12 @@ function bytesToHex(bytes: Uint8Array): string {
 }
 
 function hexToBytes(hex: string): Uint8Array {
+  if (hex.length % 2 !== 0) {
+    throw new Error("Hex string must have even length");
+  }
+  if (!/^[0-9a-fA-F]*$/.test(hex)) {
+    throw new Error("Hex string contains invalid characters");
+  }
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);

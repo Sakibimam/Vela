@@ -8,9 +8,9 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles: Record<CardVariant, string> = {
-  default: "glass rounded-[var(--radius-card)]",
-  elevated: "glass-strong rounded-[var(--radius-card)] shadow-xl shadow-black/20",
-  outlined: "bg-transparent border border-border-strong rounded-[var(--radius-card)]",
+  default: "glass rounded-[var(--radius-card)] transition-all duration-300 hover:border-white/15",
+  elevated: "glass-strong rounded-[var(--radius-card)] shadow-xl shadow-black/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/30 hover:border-white/15",
+  outlined: "bg-transparent border border-border-strong rounded-[var(--radius-card)] transition-all duration-300 hover:border-white/15",
 };
 
 export function Card({ className, variant = "default", children, ...props }: CardProps) {

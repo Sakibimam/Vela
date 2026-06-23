@@ -48,6 +48,9 @@ template Withdrawal() {
     signal input nullifier;
     signal input receiver_address_hash;
 
+    // Public output — binds the proof to this specific receiver
+    signal output withdrawal_binding;
+
     // 1. Compute leaf = Poseidon(amount, receiver_secret, nonce)
     component leafHash = Poseidon(3);
     leafHash.inputs[0] <== amount;
@@ -69,15 +72,12 @@ template Withdrawal() {
     nullifierHash.inputs[1] <== nonce;
     nullifierHash.out === nullifier;
 
-    // 3. Bind receiver address to this withdrawal
+    // 3. Bind withdrawal to receiver address (prevents front-running)
+    // The contract must verify withdrawal_binding == expected value
     component addressBinding = Poseidon(2);
     addressBinding.inputs[0] <== receiver_secret;
     addressBinding.inputs[1] <== receiver_address_hash;
-    // Constraint: the binding must be non-zero (proves knowledge of secret for this address)
-    signal address_check;
-    address_check <== addressBinding.out;
-    // Expose as implicit binding — the receiver_address_hash is public,
-    // so verifier knows who's claiming. The private receiver_secret binds them.
+    withdrawal_binding <== addressBinding.out;
 }
 
 component main {public [merkle_root, nullifier, receiver_address_hash]} = Withdrawal();

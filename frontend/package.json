@@ -10,27 +10,30 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "^15.3.3",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "tailwindcss": "^4.1.8",
-    "@tailwindcss/postcss": "^4.1.8",
-    "snarkjs": "^0.7.5",
-    "framer-motion": "^12.12.1",
-    "lucide-react": "^0.511.0",
     "@radix-ui/react-dialog": "^1.1.7",
     "@radix-ui/react-tabs": "^1.1.4",
     "@radix-ui/react-toast": "^1.2.7",
+    "@stellar/freighter-api": "^3.1.0",
+    "@stellar/stellar-sdk": "^13.3.0",
+    "@tailwindcss/postcss": "^4.1.8",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^3.3.0"
+    "framer-motion": "^12.12.1",
+    "lucide-react": "^0.511.0",
+    "next": "^15.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "snarkjs": "^0.7.5",
+    "tailwind-merge": "^3.3.0",
+    "tailwindcss": "^4.1.8"
   },
   "devDependencies": {
-    "typescript": "^5.8.3",
+    "@types/node": "^22.15.21",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
-    "@types/node": "^22.15.21",
-    "postcss": "^8.5.4",
+    "@types/snarkjs": "^0.7.9",
     "eslint": "^9.28.0",
-    "eslint-config-next": "^15.3.3"
+    "eslint-config-next": "^15.3.3",
+    "postcss": "^8.5.4",
+    "typescript": "^5.8.3"
   }
 }

@@ -156,6 +156,7 @@ export class PoseidonMerkleTree {
     return zeros;
   }
 
+  // TODO [HIGH perf]: cache layers and only recompute on insert — currently O(2^depth) on every call
   private computeLayers(): bigint[][] {
     const maxLeaves = 2 ** this.depth;
     const paddedLeaves: bigint[] = [...this.leaves];

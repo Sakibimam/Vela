@@ -40,16 +40,16 @@ export async function isConnected(): Promise<boolean> {
  * @throws If the user denies access or Freighter is not installed.
  */
 export async function connectWallet(): Promise<string> {
-  const connected = await isConnected();
-  if (!connected) {
-    throw new Error(
-      "Freighter wallet is not installed. Please install the Freighter browser extension."
-    );
-  }
-
   const accessResult = await requestAccess();
   if (accessResult.error) {
-    throw new Error(`Wallet connection denied: ${accessResult.error}`);
+    const msg = typeof accessResult.error === "string"
+      ? accessResult.error
+      : accessResult.error.message || "Connection denied";
+    throw new Error(msg);
+  }
+
+  if (!accessResult.address) {
+    throw new Error("No address returned from Freighter");
   }
 
   return accessResult.address;
