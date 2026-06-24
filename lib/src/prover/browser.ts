@@ -25,7 +25,7 @@ export interface KycInput {
   merkle_indices: number[];
   allowed_countries_root: bigint;
   min_birth_year: bigint;
-  kyc_issuer_hash: bigint;
+  kyc_issuer_hash?: bigint; // Optional - will be computed from kyc_attestation + user_secret if not provided
   nonce: bigint;
 }
 

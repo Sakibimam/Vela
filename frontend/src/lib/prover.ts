@@ -87,8 +87,8 @@ async function realKycProof(input: KycProofInput): Promise<ProofOutput> {
     merkle_path: Array(8).fill(BigInt(0)),
     merkle_indices: Array(8).fill(0),
     allowed_countries_root: allowedCountriesRoot,
-    min_birth_year: BigInt(1944),
-    kyc_issuer_hash: BigInt(0), // Will be computed inside proveKYC
+    min_birth_year: BigInt(2008),
+    kyc_issuer_hash: undefined, // Will be computed inside proveKYC from kyc_attestation + user_secret
     nonce: BigInt("0x" + randomHex(16)),
   });
   const proofHash = randomHex(32);
