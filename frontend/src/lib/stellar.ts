@@ -39,6 +39,12 @@ function explorerUrl(hash: string): string {
   return `https://stellar.expert/explorer/testnet/tx/${hash}`;
 }
 
+function fieldElementToBytes32(decimalString: string): Buffer {
+  const n = BigInt(decimalString);
+  const hex = n.toString(16).padStart(64, "0");
+  return Buffer.from(hex, "hex");
+}
+
 async function mockTransaction(delayMs: number): Promise<TransactionResult> {
   await delay(delayMs);
   const hash = randomHex(32);
@@ -108,18 +114,21 @@ async function realDeposit(params: DepositParams, walletAddress: string): Promis
     )
   );
 
-  // Commitment is the first public signal of the amount proof
+  // Commitment is the first public signal of the amount proof (convert from decimal string to bytes)
   const commitment = StellarSdk.xdr.ScVal.scvBytes(
-    Buffer.from(params.commitment.padStart(64, "0"), "hex")
+    fieldElementToBytes32(params.commitment)
   );
 
-  // Derive nullifiers from the first 32 bytes of each proof's public signals
-  const nullifierKyc = StellarSdk.xdr.ScVal.scvBytes(
-    Buffer.from(params.kycPublicSignals[params.kycPublicSignals.length - 1] || randomHex(32)).slice(0, 32)
-  );
-  const nullifierAmount = StellarSdk.xdr.ScVal.scvBytes(
-    Buffer.from(params.amountPublicSignals[params.amountPublicSignals.length - 1] || randomHex(32)).slice(0, 32)
-  );
+  // Nullifiers are the last public signal from each proof (convert from decimal string to bytes)
+  const nullifierKycBytes = fieldElementToBytes32(params.kycPublicSignals[params.kycPublicSignals.length - 1] || "0");
+  const nullifierAmountBytes = fieldElementToBytes32(params.amountPublicSignals[params.amountPublicSignals.length - 1] || "0");
+
+  console.log("🔍 Nullifier KYC hex:", nullifierKycBytes.toString("hex"));
+  console.log("🔍 Nullifier Amount hex:", nullifierAmountBytes.toString("hex"));
+  console.log("🔍 Commitment hex:", fieldElementToBytes32(params.commitment).toString("hex"));
+
+  const nullifierKyc = StellarSdk.xdr.ScVal.scvBytes(nullifierKycBytes);
+  const nullifierAmount = StellarSdk.xdr.ScVal.scvBytes(nullifierAmountBytes);
 
   const encPayload = StellarSdk.xdr.ScVal.scvBytes(
     Buffer.from(params.encryptedPayload.padStart(64, "0").slice(0, 64), "hex")
