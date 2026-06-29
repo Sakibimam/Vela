@@ -1,0 +1,46 @@
+<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="velaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Logo Mark (Compact) -->
+  <g transform="translate(10, 10)">
+    <!-- Shield Background -->
+    <path d="M 50 15 L 80 35 L 80 65 Q 80 70 75 72.5 L 50 85 L 25 72.5 Q 20 70 20 65 L 20 35 Z"
+          fill="url(#velaGradient)"
+          opacity="0.15"/>
+
+    <!-- Central "V" -->
+    <path d="M 35 30 L 50 65 L 65 30"
+          stroke="url(#velaGradient)"
+          stroke-width="6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+
+    <!-- Small Shield Accent -->
+    <path d="M 50 22.5 L 55 25 L 55 29 Q 55 30 54 30.5 L 50 32.5 L 46 30.5 Q 45 30 45 29 L 45 25 Z"
+          fill="url(#velaGradient)"
+          opacity="0.8"/>
+  </g>
+
+  <!-- Wordmark "VELA" -->
+  <text x="110" y="75"
+        font-family="Inter, system-ui, -apple-system, sans-serif"
+        font-size="48"
+        font-weight="700"
+        fill="url(#velaGradient)"
+        letter-spacing="-0.02em">VELA</text>
+
+  <!-- Tagline -->
+  <text x="112" y="95"
+        font-family="Inter, system-ui, -apple-system, sans-serif"
+        font-size="12"
+        font-weight="400"
+        fill="#64748B"
+        letter-spacing="0.1em">PRIVATE REMITTANCE</text>
+</svg>

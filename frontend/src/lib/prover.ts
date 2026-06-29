@@ -87,11 +87,12 @@ async function realKycProof(input: KycProofInput): Promise<ProofOutput> {
     merkle_path: Array(8).fill(BigInt(0)),
     merkle_indices: Array(8).fill(0),
     allowed_countries_root: allowedCountriesRoot,
-    min_birth_year: BigInt(2008), // Maximum birth year for 18+ as of 2026 (circuit constraint: birth_year <= min_birth_year)
-    kyc_issuer_hash: undefined, // Will be computed inside proveKYC from kyc_attestation + user_secret
+    min_birth_year: BigInt(2008),
+    kyc_issuer_hash: undefined,
     nonce: BigInt("0x" + randomHex(16)),
   });
-  const proofHash = randomHex(32);
+  const nullifier = result.publicSignals[3] || "0";
+  const proofHash = BigInt(nullifier).toString(16).padStart(64, "0");
   return {
     proofHash,
     publicSignals: result.publicSignals,
@@ -111,7 +112,8 @@ async function realAmountProof(input: AmountProofInput): Promise<ProofOutput> {
     nonce: BigInt("0x" + input.nonce),
     max_amount: BigInt(input.maxAmount),
   });
-  const proofHash = randomHex(32);
+  const commitment = result.publicSignals[0] || "0";
+  const proofHash = BigInt(commitment).toString(16).padStart(64, "0");
   return {
     proofHash,
     publicSignals: result.publicSignals,
@@ -133,12 +135,14 @@ async function realWithdrawalProof(input: WithdrawalProofInput): Promise<ProofOu
     amount: BigInt(input.amount),
     receiver_secret: BigInt("0x" + input.receiverSecret),
     nonce: BigInt("0x" + input.nonce),
-    merkle_path: Array(8).fill(BigInt(0)),  // All zeros for single-leaf tree
-    merkle_indices: Array(8).fill(0),        // All zeros for single-leaf tree
-    merkle_root: BigInt(input.merkleRoot),   // Parse commitment as decimal BigInt
+    merkle_path: Array(8).fill(BigInt(0)),
+    merkle_indices: Array(8).fill(0),
+    merkle_root: BigInt(input.merkleRoot),
     receiver_address_hash: BigInt(0),
   });
-  const proofHash = randomHex(32);
+  // publicSignals: [0]=withdrawal_binding, [1]=merkle_root, [2]=nullifier, [3]=receiver_address_hash
+  const withdrawalNullifier = result.publicSignals[2] || "0";
+  const proofHash = BigInt(withdrawalNullifier).toString(16).padStart(64, "0");
   return {
     proofHash,
     publicSignals: result.publicSignals,

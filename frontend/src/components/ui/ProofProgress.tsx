@@ -12,10 +12,10 @@ interface ProofProgressProps {
 }
 
 const PROOF_STAGES = [
-  "Loading circuit parameters...",
-  "Computing witness...",
-  "Generating Groth16 proof...",
-  "Finalizing proof elements...",
+  "Loading circuit parameters",
+  "Computing witness",
+  "Generating Groth16 proof",
+  "Finalizing proof elements",
 ];
 
 export function ProofProgress({
@@ -55,97 +55,106 @@ export function ProofProgress({
     else setStageIndex(3);
   }, [progress]);
 
-  const circumference = 2 * Math.PI * 44;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
   return (
     <AnimatePresence>
       {active && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="flex flex-col items-center gap-6 py-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="flex flex-col items-center gap-6 py-10"
         >
-          <div className="relative w-28 h-28">
-            {/* Glow behind the ring */}
-            <div className="absolute inset-0 rounded-full bg-accent-blue/20 blur-xl animate-pulse-glow" />
+          {/* Proof visualization — concentric rings */}
+          <div className="relative w-32 h-32">
+            {/* Outer glow */}
+            <div
+              className="absolute inset-[-8px] rounded-full transition-opacity duration-500"
+              style={{
+                background: "radial-gradient(circle, rgb(99 102 241 / 0.15) 0%, transparent 70%)",
+                opacity: progress > 50 ? 1 : 0.5,
+              }}
+            />
 
             {/* Background ring */}
-            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 96 96">
+            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
               <circle
-                cx="48"
-                cy="48"
+                cx="50"
+                cy="50"
                 r="44"
                 fill="none"
-                stroke="rgb(255 255 255 / 0.06)"
-                strokeWidth="4"
+                stroke="rgb(255 255 255 / 0.04)"
+                strokeWidth="3"
               />
               {/* Progress ring */}
               <circle
-                cx="48"
-                cy="48"
+                cx="50"
+                cy="50"
                 r="44"
                 fill="none"
-                stroke="url(#proof-gradient)"
-                strokeWidth="4"
+                stroke="url(#proof-ring-gradient)"
+                strokeWidth="3"
                 strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
+                strokeDasharray={2 * Math.PI * 44}
+                strokeDashoffset={2 * Math.PI * 44 * (1 - progress / 100)}
                 className="transition-[stroke-dashoffset] duration-300 ease-out"
               />
+              {/* Inner decorative ring */}
+              <circle
+                cx="50"
+                cy="50"
+                r="36"
+                fill="none"
+                stroke="rgb(255 255 255 / 0.02)"
+                strokeWidth="1"
+              />
               <defs>
-                <linearGradient id="proof-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#3B82F6" />
-                  <stop offset="100%" stopColor="#8B5CF6" />
+                <linearGradient id="proof-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#6366F1" />
+                  <stop offset="50%" stopColor="#8B5CF6" />
+                  <stop offset="100%" stopColor="#3B82F6" />
                 </linearGradient>
               </defs>
             </svg>
 
-            {/* Center percentage */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-bold text-text-primary tabular-nums">
-                {progress}%
+            {/* Center content */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-text-primary tabular-nums tracking-tight">
+                {progress}
               </span>
+              <span className="text-[10px] font-mono text-text-tertiary">percent</span>
             </div>
           </div>
 
-          {/* Label */}
-          <div className="text-center space-y-2">
-            <h4 className="text-base font-semibold text-text-primary">{label}</h4>
+          {/* Label and stage */}
+          <div className="text-center space-y-2.5">
+            <h4 className="text-sm font-semibold text-text-primary tracking-tight">{label}</h4>
             <motion.p
               key={stageIndex}
-              initial={{ opacity: 0, y: 4 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-sm text-text-secondary"
+              className="text-xs text-text-tertiary font-mono"
             >
               {PROOF_STAGES[stageIndex]}
             </motion.p>
           </div>
 
-          {/* Animated dots */}
-          <div className="flex gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <motion.div
+          {/* Stage indicators */}
+          <div className="flex gap-1">
+            {PROOF_STAGES.map((_, i) => (
+              <div
                 key={i}
                 className={cn(
-                  "w-1.5 h-1.5 rounded-full",
-                  progress === 100 ? "bg-success" : "bg-accent-blue"
+                  "h-1 rounded-full transition-all duration-500",
+                  i <= stageIndex ? "w-6 bg-accent-indigo" : "w-2 bg-white/10"
                 )}
-                animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  delay: i * 0.2,
-                }}
               />
             ))}
           </div>
 
           {/* Time estimate */}
           {progress < 100 && (
-            <p className="text-xs text-text-tertiary tabular-nums">
-              ~{Math.ceil(((100 - progress) / 100) * (estimatedMs / 1000))}s remaining
+            <p className="text-[11px] text-text-tertiary tabular-nums font-mono">
+              ~{Math.ceil(((100 - progress) / 100) * (estimatedMs / 1000))}s
             </p>
           )}
         </motion.div>

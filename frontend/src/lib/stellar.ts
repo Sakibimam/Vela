@@ -244,25 +244,48 @@ async function realWithdraw(params: WithdrawParams, walletAddress: string): Prom
     }),
   ]);
 
-  // Encode public signals as Fr field elements
-  const publicInputsEncoded = encodePublicSignals(params.withdrawalPublicSignals);
+  // snarkjs publicSignals for withdrawal circuit:
+  //   [0] = withdrawal_binding (circuit output)
+  //   [1] = merkle_root (public input)
+  //   [2] = nullifier (public input)
+  //   [3] = receiver_address_hash (public input)
+  //
+  // Contract verifier ("withdraw") expects exactly 3 public inputs in this order:
+  //   [merkle_root, nullifier, withdrawal_binding]
+  // Contract fn withdraw() params after proof:
+  //   withdrawal_public_inputs: Vec<Fr> (the 3 above)
+  //   nullifier: BytesN<32> (same value as public_inputs[1], used for nullifier-set storage)
+  //   withdrawal_binding: BytesN<32> (same as public_inputs[2], emitted in event)
+
+  const withdrawalBindingDecimal = params.withdrawalPublicSignals[0];
+  const merkleRootDecimal = params.withdrawalPublicSignals[1];
+  const nullifierDecimal = params.withdrawalPublicSignals[2];
+
+  if (!merkleRootDecimal || !nullifierDecimal || !withdrawalBindingDecimal) {
+    throw new Error(
+      `Invalid withdrawal public signals: merkleRoot=${merkleRootDecimal}, nullifier=${nullifierDecimal}, binding=${withdrawalBindingDecimal}`
+    );
+  }
+
+  // Vec<Fr> with exactly 3 elements for the verifier
+  const contractPublicInputs = [merkleRootDecimal, nullifierDecimal, withdrawalBindingDecimal];
+  const publicInputsEncoded = encodePublicSignals(contractPublicInputs);
   const publicInputsVal = StellarSdk.xdr.ScVal.scvVec(
     publicInputsEncoded.map((bytes) =>
       StellarSdk.xdr.ScVal.scvBytes(Buffer.from(bytes))
     )
   );
 
-  // Convert hex string nullifier to BigInt with "0x" prefix, then to bytes
-  const nullifier = StellarSdk.xdr.ScVal.scvBytes(
-    Buffer.from(fieldElementToBytes32(BigInt("0x" + params.nullifier).toString()))
-  );
+  // Standalone nullifier BytesN<32> — must encode the same decimal value as contractPublicInputs[1]
+  const nullifierBytes = fieldElementToBytes32(nullifierDecimal);
+  const nullifier = StellarSdk.xdr.ScVal.scvBytes(Buffer.from(nullifierBytes));
 
-  // Withdrawal binding is derived from public signals (last element is typically the binding)
-  const withdrawalBinding = StellarSdk.xdr.ScVal.scvBytes(
-    Buffer.from(fieldElementToBytes32(params.withdrawalPublicSignals[params.withdrawalPublicSignals.length - 1] || "0"))
-  );
+  // Standalone withdrawal_binding BytesN<32> — same value as contractPublicInputs[2]
+  const withdrawalBindingBytes = fieldElementToBytes32(withdrawalBindingDecimal);
+  const withdrawalBinding = StellarSdk.xdr.ScVal.scvBytes(Buffer.from(withdrawalBindingBytes));
 
-  // Transaction builder function that accepts a fresh account
+  // Transaction builder — contract.call args match Rust signature exactly:
+  //   withdraw(receiver, withdrawal_proof, withdrawal_public_inputs, nullifier, withdrawal_binding)
   const buildTx = (sourceAccount: any) => {
     return new StellarSdk.TransactionBuilder(sourceAccount, {
       fee: "10000000",
@@ -271,11 +294,11 @@ async function realWithdraw(params: WithdrawParams, walletAddress: string): Prom
       .addOperation(
         contract.call(
           "withdraw",
-          StellarSdk.nativeToScVal(walletAddress, { type: "address" }),
-          proofVal,
-          publicInputsVal,
-          nullifier,
-          withdrawalBinding
+          StellarSdk.nativeToScVal(walletAddress, { type: "address" }),  // receiver: Address
+          proofVal,                                                       // withdrawal_proof: Proof {a, b, c}
+          publicInputsVal,                                                // withdrawal_public_inputs: Vec<Fr> [3 elements]
+          nullifier,                                                      // nullifier: BytesN<32>
+          withdrawalBinding                                               // withdrawal_binding: BytesN<32>
         )
       )
       .setTimeout(300)

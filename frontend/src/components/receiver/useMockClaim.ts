@@ -2,16 +2,7 @@ import { useState, useCallback } from "react";
 import { generateWithdrawalProof } from "@/lib/prover";
 import type { ProofOutput } from "@/lib/prover";
 import { submitWithdrawal } from "@/lib/stellar";
-import { isMockMode } from "@/lib/env";
 import type { LookupState, WithdrawalProofState, ClaimTxState, ClaimData } from "./types";
-
-function randomHex(bytes: number): string {
-  const arr = new Uint8Array(bytes);
-  crypto.getRandomValues(arr);
-  return Array.from(arr)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
 
 export function useMockClaim() {
   const [lookup, setLookup] = useState<LookupState>({ status: "idle", error: null });
@@ -133,10 +124,14 @@ export function useMockClaim() {
 
       setClaimTx({ status: "submitting", hash: null, error: null });
 
+      // publicSignals order: [0]=withdrawal_binding, [1]=merkle_root, [2]=nullifier, [3]=receiver_address_hash
+      const nullifier = proofData.publicSignals[2] || "";
+      const nullifierHex = BigInt(nullifier).toString(16).padStart(64, "0");
+
       const result = await submitWithdrawal({
         withdrawalProof: proofData.proof,
         withdrawalPublicSignals: proofData.publicSignals,
-        nullifier: randomHex(32),
+        nullifier: nullifierHex,
       });
 
       setClaimTx({ status: "complete", hash: result.hash, error: null });

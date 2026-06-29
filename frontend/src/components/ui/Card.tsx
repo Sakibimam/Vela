@@ -1,16 +1,29 @@
 import { type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-type CardVariant = "default" | "elevated" | "outlined";
+type CardVariant = "default" | "elevated" | "outlined" | "interactive";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant;
 }
 
 const variantStyles: Record<CardVariant, string> = {
-  default: "glass rounded-[var(--radius-card)] transition-all duration-300 hover:border-white/15",
-  elevated: "glass-strong rounded-[var(--radius-card)] shadow-xl shadow-black/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/30 hover:border-white/15",
-  outlined: "bg-transparent border border-border-strong rounded-[var(--radius-card)] transition-all duration-300 hover:border-white/15",
+  default: "glass rounded-[var(--radius-card)] transition-all duration-300",
+  elevated: [
+    "glass-strong rounded-[var(--radius-card)]",
+    "shadow-[0_8px_32px_rgb(0_0_0/0.3),inset_0_1px_0_rgb(255_255_255/0.05)]",
+    "transition-all duration-300",
+  ].join(" "),
+  outlined: [
+    "bg-transparent border border-border-strong rounded-[var(--radius-card)]",
+    "transition-all duration-300 hover:border-white/15",
+  ].join(" "),
+  interactive: [
+    "glass rounded-[var(--radius-card)] transition-all duration-300",
+    "hover:bg-white/[0.06] hover:border-white/12",
+    "hover:shadow-[0_8px_24px_rgb(0_0_0/0.2)]",
+    "hover:translate-y-[-1px]",
+  ].join(" "),
 };
 
 export function Card({ className, variant = "default", children, ...props }: CardProps) {

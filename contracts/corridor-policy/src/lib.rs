@@ -36,9 +36,6 @@ mod settlement_interface {
 }
 
 use verifier_interface::{Proof, VerifierClient};
-// Settlement interactions happen via atomic transaction bundling, not cross-contract calls.
-// The interface is retained for documentation of the intended production architecture.
-#[allow(unused_imports)]
 use settlement_interface::SettlementClient;
 
 #[contracterror]
@@ -219,9 +216,18 @@ impl CorridorPolicyContract {
             .instance()
             .set(&DataKey::CommitmentCount, &(count + 1));
 
+        // Lock funds via settlement contract
+        // Demo: fixed amount of 10_000_000 stroops (1 XLM) per deposit.
+        // Production would use the shielded amount from the commitment.
+        let settlement_id: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::SettlementContractId)
+            .unwrap();
+        let settlement_client = SettlementClient::new(&env, &settlement_id);
+        settlement_client.lock_funds(&sender, &10_000_000i128);
+
         // Emit deposit event with encrypted payload for auditors
-        // Note: funds are locked via a separate SAC transfer in the same transaction
-        // envelope — the amount never appears in this contract's call data.
         env.events().publish(
             (Symbol::new(&env, "deposit"), commitment),
             (nullifier_kyc, nullifier_amount, encrypted_payload),
@@ -290,8 +296,18 @@ impl CorridorPolicyContract {
             .persistent()
             .set(&DataKey::Nullifier(nullifier.clone()), &true);
 
+        // Release funds via settlement contract
+        // Demo: fixed amount of 10_000_000 stroops (1 XLM) per withdrawal.
+        // Production would derive amount from the shielded commitment via an encrypted channel.
+        let settlement_id: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::SettlementContractId)
+            .unwrap();
+        let settlement_client = SettlementClient::new(&env, &settlement_id);
+        settlement_client.release_funds(&receiver, &10_000_000i128);
+
         // Emit withdrawal event with binding for off-chain verification
-        // Fund release happens via a separate authorized transfer in the same tx envelope
         env.events()
             .publish((Symbol::new(&env, "withdrawal"),), (nullifier, receiver, withdrawal_binding));
 

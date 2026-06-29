@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Wallet, Search, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Wallet, Search, CheckCircle, XCircle, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import type { LookupState, ClaimData } from "./types";
 
@@ -47,38 +46,41 @@ export function StepClaimDetails({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Wallet Connection */}
       {!walletConnected ? (
-        <Card variant="outlined" className="flex items-center justify-between">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
           <div>
-            <p className="text-sm font-medium text-text-primary">Connect Your Wallet</p>
-            <p className="text-xs text-text-secondary mt-0.5">
-              Funds will be sent to your connected Stellar address
+            <p className="text-sm font-medium text-text-primary">Connect Wallet</p>
+            <p className="text-xs text-text-tertiary mt-0.5">
+              Funds will be sent to your connected address
             </p>
           </div>
           <Button size="sm" onClick={onConnectWallet} disabled={walletConnecting} loading={walletConnecting}>
-            <Wallet className="w-4 h-4" />
+            <Wallet className="w-3.5 h-3.5" />
             {walletConnecting ? "Connecting..." : "Connect"}
           </Button>
-        </Card>
+        </div>
       ) : (
-        <Card variant="outlined" className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-success" />
-            <span className="text-sm text-text-primary font-medium">Wallet Connected</span>
+        <div className="flex items-center justify-between p-4 rounded-xl border border-success/10 bg-success/[0.03]">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_6px_rgb(16_185_129/0.5)]" />
+            <span className="text-sm text-text-primary font-medium">Connected</span>
           </div>
-          <code className="text-xs font-mono text-text-secondary">
+          <code className="text-[11px] font-mono text-text-tertiary">
             {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-8)}
           </code>
-        </Card>
+        </div>
       )}
 
       {/* Claim Secret Input */}
       <div className="space-y-3">
-        <h3 className="text-base font-semibold text-text-primary">Claim Secret</h3>
-        <p className="text-xs text-text-secondary">
-          Paste the shared secret from the sender to look up your transfer.
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-4 rounded-full bg-accent-teal" />
+          <h3 className="text-sm font-semibold text-text-primary tracking-tight">Claim Secret</h3>
+        </div>
+        <p className="text-xs text-text-tertiary">
+          Paste the shared secret from the sender to locate your transfer on-chain.
         </p>
         <div className="flex gap-2">
           <div className="flex-1">
@@ -100,8 +102,9 @@ export function StepClaimDetails({
             onClick={handleLookup}
             disabled={!walletConnected || lookup.status === "searching"}
             loading={lookup.status === "searching"}
+            className="shrink-0"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-3.5 h-3.5" />
             Find
           </Button>
         </div>
@@ -109,52 +112,55 @@ export function StepClaimDetails({
 
       {/* Lookup Result */}
       {lookup.status === "searching" && (
-        <Card variant="outlined" className="flex items-center gap-3">
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
           <Loader2 className="w-4 h-4 text-accent-blue animate-spin" />
           <span className="text-sm text-text-secondary">Searching on-chain commitments...</span>
-        </Card>
+        </div>
       )}
 
       {lookup.status === "found" && claimData.amount && (
-        <Card variant="elevated" className="space-y-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-success" />
-            <span className="text-sm font-semibold text-success">Funds Found</span>
+        <div className="rounded-xl border border-success/12 bg-success/[0.03] overflow-hidden">
+          <div className="flex items-center gap-2.5 p-4 border-b border-success/8">
+            <CheckCircle className="w-4.5 h-4.5 text-success" />
+            <span className="text-sm font-semibold text-success">Transfer Found</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-text-secondary">Amount</span>
-              <span className="text-lg font-bold text-text-primary">${claimData.amount} USDC</span>
+              <span className="text-xl font-bold text-text-primary">${claimData.amount} <span className="text-sm font-normal text-text-tertiary">USDC</span></span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-text-secondary">Corridor</span>
-              <Badge variant="info">Dubai → Manila</Badge>
+              <Badge variant="info">{claimData.corridor}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-text-secondary">Commitment</span>
-              <code className="text-xs font-mono text-text-tertiary">
+              <code className="text-[10px] font-mono text-text-tertiary bg-white/[0.04] px-2 py-0.5 rounded">
                 {claimData.commitmentHash?.slice(0, 12)}...{claimData.commitmentHash?.slice(-12)}
               </code>
             </div>
           </div>
 
-          <p className="text-xs text-text-tertiary border-t border-border pt-3">
-            Amount was decrypted locally using your claim secret. It never appears on-chain.
-          </p>
-        </Card>
+          <div className="flex items-center gap-2 px-4 py-3 border-t border-success/6 bg-success/[0.02]">
+            <Lock className="w-3 h-3 text-text-tertiary" />
+            <p className="text-[10px] text-text-tertiary">
+              Decrypted locally — amount never appears on-chain
+            </p>
+          </div>
+        </div>
       )}
 
       {lookup.status === "not-found" && (
-        <Card variant="outlined" className="border-error/20 flex items-center gap-3">
-          <XCircle className="w-5 h-5 text-error shrink-0" />
+        <div className="flex items-start gap-3 p-4 rounded-xl border border-error/12 bg-error/[0.03]">
+          <XCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-error">No matching transfer found</p>
-            <p className="text-xs text-text-tertiary mt-0.5">
-              Double-check the secret or ask the sender to confirm it was sent.
+            <p className="text-sm font-medium text-error">No matching transfer</p>
+            <p className="text-xs text-text-tertiary mt-1">
+              Double-check the secret or confirm with the sender.
             </p>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Continue */}

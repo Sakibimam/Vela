@@ -15,18 +15,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || label?.toLowerCase().replace(/\s/g, "-");
 
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-text-secondary"
+            className="block text-[13px] font-medium text-text-secondary tracking-wide"
           >
             {label}
           </label>
         )}
-        <div className="relative">
+        <div className="relative group">
           {prefix && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm font-medium">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary text-sm font-medium">
               {prefix}
             </span>
           )}
@@ -34,19 +34,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              "w-full bg-white/5 border border-border text-text-primary placeholder:text-text-tertiary",
-              "rounded-[var(--radius-input)] px-3 py-2.5 text-sm",
-              "transition-colors duration-200",
-              "focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              error && "border-error focus:border-error focus:ring-error/50",
+              "w-full bg-white/[0.03] border border-white/8 text-text-primary placeholder:text-text-tertiary/60",
+              "rounded-[var(--radius-input)] px-3.5 py-2.5 text-sm",
+              "transition-all duration-200",
+              "focus:outline-none focus:bg-white/[0.05] focus:border-accent-blue/50 focus:ring-1 focus:ring-accent-blue/20",
+              "group-hover:border-white/12",
+              "disabled:opacity-40 disabled:cursor-not-allowed",
+              error && "border-error/40 focus:border-error/60 focus:ring-error/20",
               prefix && "pl-10",
               className
             )}
             {...props}
           />
         </div>
-        {error && <p className="text-xs text-error">{error}</p>}
+        {error && <p className="text-xs text-error/90 font-medium">{error}</p>}
         {helperText && !error && (
           <p className="text-xs text-text-tertiary">{helperText}</p>
         )}

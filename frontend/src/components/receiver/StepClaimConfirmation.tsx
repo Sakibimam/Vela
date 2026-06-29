@@ -79,7 +79,7 @@ export function StepClaimConfirmation({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-text-secondary">Corridor</span>
-            <Badge variant="info">Dubai → Manila</Badge>
+            <Badge variant="info">{claimData.corridor}</Badge>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-text-secondary">Privacy</span>

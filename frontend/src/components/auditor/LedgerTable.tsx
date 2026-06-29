@@ -13,17 +13,17 @@ interface LedgerTableProps {
 
 export function LedgerTable({ revealed, revealedRows }: LedgerTableProps) {
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-border">
+    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-white/[0.06] bg-white/[0.01]">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border bg-white/[0.02]">
-            <th className="px-4 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">#</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">Commitment</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">Corridor</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">Timestamp</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">Amount</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">Sender</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-text-tertiary uppercase tracking-wider">Receiver</th>
+          <tr className="border-b border-white/[0.06]">
+            <th className="px-4 py-3.5 text-left text-[10px] font-semibold text-text-tertiary uppercase tracking-[0.1em]">#</th>
+            <th className="px-4 py-3.5 text-left text-[10px] font-semibold text-text-tertiary uppercase tracking-[0.1em]">Commitment</th>
+            <th className="px-4 py-3.5 text-left text-[10px] font-semibold text-text-tertiary uppercase tracking-[0.1em]">Corridor</th>
+            <th className="px-4 py-3.5 text-left text-[10px] font-semibold text-text-tertiary uppercase tracking-[0.1em]">Timestamp</th>
+            <th className="px-4 py-3.5 text-left text-[10px] font-semibold text-text-tertiary uppercase tracking-[0.1em]">Amount</th>
+            <th className="px-4 py-3.5 text-left text-[10px] font-semibold text-text-tertiary uppercase tracking-[0.1em]">Sender</th>
+            <th className="px-4 py-3.5 text-left text-[10px] font-semibold text-text-tertiary uppercase tracking-[0.1em]">Receiver</th>
           </tr>
         </thead>
         <tbody>
@@ -35,16 +35,17 @@ export function LedgerTable({ revealed, revealedRows }: LedgerTableProps) {
               <motion.tr
                 key={tx.id}
                 className={cn(
-                  "border-b border-border/50 transition-colors duration-500",
-                  isRevealed ? "bg-accent-blue/[0.03]" : "bg-transparent"
+                  "border-b border-white/[0.04] transition-colors duration-500",
+                  isRevealed ? "bg-accent-blue/[0.02]" : "bg-transparent",
+                  "hover:bg-white/[0.02]"
                 )}
-                animate={isRevealed ? { backgroundColor: "rgba(59, 130, 246, 0.03)" } : {}}
+                animate={isRevealed ? { backgroundColor: "rgba(59, 130, 246, 0.02)" } : {}}
               >
-                <td className="px-4 py-3 text-text-tertiary font-mono text-xs">
+                <td className="px-4 py-3 text-text-tertiary font-mono text-[11px]">
                   {tx.id}
                 </td>
                 <td className="px-4 py-3">
-                  <code className="text-xs font-mono text-text-secondary">
+                  <code className="text-[11px] font-mono text-text-secondary">
                     {tx.commitment.slice(0, 10)}...
                   </code>
                 </td>
@@ -57,7 +58,7 @@ export function LedgerTable({ revealed, revealedRows }: LedgerTableProps) {
                     className="text-xs font-medium"
                   />
                 </td>
-                <td className="px-4 py-3 text-xs text-text-secondary tabular-nums">
+                <td className="px-4 py-3 text-[11px] text-text-secondary font-mono tabular-nums">
                   {tx.timestamp}
                 </td>
                 <td className="px-4 py-3">
@@ -71,9 +72,9 @@ export function LedgerTable({ revealed, revealedRows }: LedgerTableProps) {
                       {tx.amount}
                     </motion.span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-text-tertiary">
                       <Lock className="w-3 h-3" />
-                      SHIELDED
+                      <span className="font-mono">SHIELDED</span>
                     </span>
                   )}
                 </td>
@@ -88,7 +89,7 @@ export function LedgerTable({ revealed, revealedRows }: LedgerTableProps) {
                       {tx.sender}
                     </motion.span>
                   ) : (
-                    <span className="text-xs text-text-tertiary">PRIVATE</span>
+                    <span className="text-[11px] font-mono text-text-tertiary">PRIVATE</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -102,7 +103,7 @@ export function LedgerTable({ revealed, revealedRows }: LedgerTableProps) {
                       {tx.receiver}
                     </motion.span>
                   ) : (
-                    <span className="text-xs text-text-tertiary">PRIVATE</span>
+                    <span className="text-[11px] font-mono text-text-tertiary">PRIVATE</span>
                   )}
                 </td>
               </motion.tr>
