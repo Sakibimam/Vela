@@ -31,6 +31,9 @@ export const metadata: Metadata = {
   title: "Vela — Private Remittances on Stellar",
   description:
     "Send money across borders with zero-knowledge proofs. Prove compliance. Reveal nothing.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

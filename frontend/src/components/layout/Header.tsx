@@ -41,9 +41,7 @@ export function Header() {
         <div className="flex h-[60px] items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent-blue to-accent-indigo flex items-center justify-center shadow-[0_2px_8px_rgb(99_102_241/0.3)] group-hover:shadow-[0_2px_12px_rgb(99_102_241/0.5)] transition-shadow duration-300">
-              <span className="text-white font-bold text-xs">V</span>
-            </div>
+            <img src="/logo.svg" alt="Vela" className="w-7 h-7 rounded-lg" />
             <span className="text-[15px] font-semibold text-text-primary tracking-tight">Vela</span>
           </Link>
 

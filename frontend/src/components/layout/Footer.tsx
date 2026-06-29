@@ -6,9 +6,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-8">
           <div className="flex items-center gap-3">
-            <div className="w-5 h-5 rounded-md bg-gradient-to-br from-accent-blue to-accent-indigo flex items-center justify-center">
-              <span className="text-white font-bold text-[9px]">V</span>
-            </div>
+            <img src="/logo.svg" alt="Vela" className="w-5 h-5 rounded-md" />
             <p className="text-xs text-text-tertiary">
               Built for{" "}
               <span className="text-text-secondary font-medium">
